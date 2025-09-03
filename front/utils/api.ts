@@ -19,7 +19,7 @@ API.interceptors.request.use(
   (config) => {
     const accessToken = getCookie('accessToken');
     if (accessToken) {
-      config.headers['Authorization'] = accessToken;
+      config.headers['Authorization'] = `Bearer ${accessToken}`;
     }
     return config;
   },
@@ -31,12 +31,9 @@ API.interceptors.request.use(
 API.interceptors.response.use(
   (res) => res,
   async (err) => {
-    const {
-      config,
-      response: { status },
-    } = err;
+    const { config, response } = err;
     // accessToken 만료 시, 토큰 갱신
-    if (status === 401) {
+    if (response?.status === 401) {
       const res = await refresh();
       if (res) {
         // 진행 중이던 요청 이어서 하기
