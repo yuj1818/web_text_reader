@@ -10,7 +10,7 @@ export default async function Home() {
   const books = await getBookList(accessToken);
 
   return (
-    <div className="w-full flex flex-col p-6 gap-8">
+    <div className="w-full h-full flex flex-col p-6 gap-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <LibraryBig size="1.5rem" />

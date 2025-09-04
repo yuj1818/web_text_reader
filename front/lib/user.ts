@@ -1,6 +1,6 @@
 import { LoginInterface, RegisterInterface } from '@/model/user';
 
-const URL = process.env.NEXT_PUBLIC_API_BASE_URL + 'accounts/';
+const URL = process.env.NEXT_PUBLIC_API_BASE_URL + '/api/accounts/';
 
 export async function loginUser(formValues: LoginInterface) {
   const res = await fetch(URL + 'login/', {
