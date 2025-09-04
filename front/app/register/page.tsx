@@ -1,16 +1,15 @@
 'use client';
 import InputField from '@/components/auth/InputField';
+import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { Button } from '@/components/ui/button';
-import { register } from '@/utils/user';
-import { validateRegistrationForm } from '@/utils/validation';
+import { validateRegistrationForm } from '@/lib/validation';
+import { RegisterInterface } from '@/model/user';
 import { useMutation } from '@tanstack/react-query';
+import { register } from '@/lib/user';
 import { useRouter } from 'next/navigation';
 import { ChangeEvent, useCallback, useMemo, useState } from 'react';
 
-export interface RegistrationFormValues {
-  username: string;
-  email: string;
-  password: string;
+export interface RegistrationFormValues extends RegisterInterface {
   password2: string;
 }
 
@@ -44,24 +43,20 @@ function RegisterPage() {
   const isValid = Object.keys(errors).length === 0;
 
   const mutation = useMutation({
-    mutationFn: (formValues: RegistrationFormValues) =>
-      register({
-        username: formValues.username,
-        email: formValues.email,
-        password: formValues.password,
-      }),
+    mutationFn: (formValues: RegistrationFormValues) => register(formValues),
   });
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     mutation.mutate(formValues, {
-      onSuccess: () => router.push('/auth/login'),
+      onSuccess: () => router.push('/login'),
       onError: () => alert('회원가입 실패'),
     });
   };
 
   return (
     <>
+      {mutation.isPending && <LoadingIndicator />}
       <form
         className="absolute top-1/2 left-1/2 -translate-1/2 bg-neutral-100 w-[30rem] p-8 rounded flex flex-col gap-4"
         onSubmit={onSubmit}

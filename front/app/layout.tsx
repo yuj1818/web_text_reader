@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { ThemeProvider } from '@/components/common/theme-provider';
+import dayjs from '@/lib/dayjs';
+import { ThemeProvider } from '@/components/common/ThemeProvider';
+import { ModeToggle } from '@/components/common/ModeToggle';
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -14,8 +16,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <body className="relative w-screen h-screen">
-        <ThemeProvider>{children}</ThemeProvider>
+      <body className="relative w-screen h-screen flex flex-col">
+        <ThemeProvider>
+          <ModeToggle />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

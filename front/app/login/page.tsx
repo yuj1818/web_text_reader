@@ -2,11 +2,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { useMutation } from '@tanstack/react-query';
-import { login, LoginInterface } from '@/utils/user';
+import { LoginInterface } from '@/model/user';
 import LoadingIndicator from '@/components/common/LoadingIndicator';
-import { validateLoginForm } from '@/utils/validation';
+import { validateLoginForm } from '@/lib/validation';
 import InputField from '@/components/auth/InputField';
+import { login } from './actions';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,7 +14,6 @@ export default function LoginPage() {
     username: '',
     password: '',
   });
-
   const [dirty, setDirty] = useState<Partial<LoginInterface>>({});
 
   const handleFormValues = useCallback(
@@ -35,21 +34,14 @@ export default function LoginPage() {
 
   const isValid = Object.keys(errors).length === 0;
 
-  const mutation = useMutation({
-    mutationFn: (formValues: LoginInterface) => login(formValues),
-  });
-
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    mutation.mutate(formValues, {
-      onSuccess: () => router.push('/'),
-      onError: () => alert('로그인 실패'),
-    });
+    await login(formValues);
+    router.push('/');
   };
 
   return (
     <>
-      {mutation.isPending && <LoadingIndicator />}
       <form
         className="absolute top-1/2 left-1/2 -translate-1/2 bg-neutral-100 w-[30rem] p-8 rounded flex flex-col gap-4"
         onSubmit={onSubmit}

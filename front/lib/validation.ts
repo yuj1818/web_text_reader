@@ -1,6 +1,6 @@
-import { RegistrationFormValues } from '@/app/auth/register/page';
+import { RegistrationFormValues } from '@/app/register/page';
 import validator from 'validator';
-import { LoginInterface } from './user';
+import { LoginInterface } from '@/model/user';
 
 export const validateRegistrationForm = (
   formValues: RegistrationFormValues,
