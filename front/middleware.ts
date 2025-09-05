@@ -19,7 +19,8 @@ export async function middleware(req: NextRequest) {
   const refreshToken = cookieStore.get('refreshToken')?.value;
 
   // 토큰 없으면 로그인 페이지
-  if (!accessToken && !refreshToken) return NextResponse.redirect('/login');
+  if (!accessToken && !refreshToken)
+    return NextResponse.redirect(new URL('/login', req.url));
 
   try {
     // accessToken 유효하면 통과
@@ -40,14 +41,14 @@ export async function middleware(req: NextRequest) {
         });
         return response;
       }
-      const response = NextResponse.redirect('/login');
+      const response = NextResponse.redirect(new URL('/login', req.url));
       response.cookies.delete('refreshToken');
       return response;
     }
 
-    return NextResponse.redirect('/login');
+    return NextResponse.redirect(new URL('/login', req.url));
   } catch {
-    const response = NextResponse.redirect('/login');
+    const response = NextResponse.redirect(new URL('/login', req.url));
     response.cookies.delete('refreshToken');
     return response;
   }

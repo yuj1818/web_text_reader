@@ -4,31 +4,72 @@ import { ReactReader, ReactReaderStyle } from 'react-reader';
 import type { Rendition, NavItem } from 'epubjs';
 import { useEffect, useRef, useState } from 'react';
 import { throttle } from '@/lib/throttle';
+import { ChevronLeft, Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Button } from '../ui/button';
+
+type SearchResult = { cfi: string; excerpt: string };
 
 function BookReader({ book }: { book: BookDetail }) {
+  const router = useRouter();
   const renditionRef = useRef<Rendition | undefined>(undefined);
   const tocRef = useRef<NavItem[]>([]);
-  const [location, setLocation] = useState<string | number>(0);
-
+  const [location, setLocation] = useState(book.bookmark_cfi);
   const [progress, setProgress] = useState(0);
-  const [chapterPages, setChapterPages] = useState<number[]>([]);
-  const [totalPages, setTotalPages] = useState(0);
+  const [totalChapters, setTotalChapters] = useState(0);
   const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [currentResultIndex, setCurrentResultIndex] = useState(0);
+  const [prevResults, setPrevResults] = useState<SearchResult[]>([]);
+
+  const goToNextResult = () => {
+    if (!searchResults.length) return;
+    const nextIndex = (currentResultIndex + 1) % searchResults.length;
+    setCurrentResultIndex(nextIndex);
+    setLocation(searchResults[nextIndex].cfi);
+  };
+
+  const highlightSearchResults = (results: SearchResult[]) => {
+    if (!renditionRef.current) return;
+    results.forEach((res) => {
+      renditionRef.current?.annotations.add('highlight', res.cfi);
+    });
+  };
+
+  const clearHighllights = () => {
+    if (!renditionRef.current) return;
+    prevResults.forEach((res) => {
+      renditionRef.current?.annotations.remove(res.cfi, 'highlight');
+    });
+  };
+
+  useEffect(() => {
+    if (searchResults.length) {
+      setLocation(searchResults[0].cfi);
+      clearHighllights();
+      highlightSearchResults(searchResults);
+      setCurrentResultIndex(0);
+      setPrevResults(searchResults);
+    }
+  }, [searchResults]);
 
   // location 변경될 때
-  const handleLocationChange = () => {
+  const handleLocationChange = (epubcfi?: string) => {
+    if (!epubcfi) return;
+    setLocation(epubcfi);
+
     if (!renditionRef.current || !tocRef.current) return;
     const { displayed, href } = renditionRef.current.location.start;
 
     const chapterIndex = tocRef.current.findIndex((item) => item.href === href);
     if (chapterIndex === -1) return;
-
     setCurrentChapterIndex(chapterIndex);
 
-    const pagesBefore = chapterPages
-      .slice(0, chapterIndex)
-      .reduce((a, b) => a + b, 0);
-    const percentage = (pagesBefore + displayed.page) / totalPages;
+    const chapterFraction = 1 / totalChapters;
+    const percentage =
+      (currentChapterIndex + displayed.page / displayed.total) *
+      chapterFraction;
     setProgress(percentage);
   };
 
@@ -37,17 +78,11 @@ function BookReader({ book }: { book: BookDetail }) {
     const val = parseFloat(e.target.value);
     setProgress(val);
 
-    if (!tocRef.current || !chapterPages.length || !renditionRef.current)
-      return;
+    if (!tocRef.current || !renditionRef.current) return;
 
-    const targetPage = Math.round(val * totalPages);
-
-    let pageSum = 0;
-    let chapterIndex = 0;
-    for (; chapterIndex < chapterPages.length; chapterIndex++) {
-      if (pageSum + chapterPages[chapterIndex] >= targetPage) break;
-      pageSum += chapterPages[chapterIndex];
-    }
+    const chapterFraction = 1 / totalChapters;
+    let chapterIndex = Math.floor(val / chapterFraction);
+    if (chapterIndex >= totalChapters) chapterIndex = totalChapters - 1;
 
     const chapter = tocRef.current[chapterIndex];
     if (!chapter) return;
@@ -78,6 +113,40 @@ function BookReader({ book }: { book: BookDetail }) {
 
   return (
     <div className="relative h-full w-full bg-background flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <ChevronLeft
+          className="cursor-pointer"
+          size="1.5rem"
+          onClick={() => router.back()}
+        />
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 border rounded p-1">
+            <input
+              className="text-sm"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchResults.length > 0) {
+                  goToNextResult();
+                }
+              }}
+            />
+            <span className="text-xs">
+              ({searchResults.length > 0 ? currentResultIndex + 1 : 0}/
+              {searchResults.length})
+            </span>
+          </div>
+          <Button
+            size="icon"
+            className="size-8 cursor-pointer"
+            disabled={!searchResults.length}
+            onClick={goToNextResult}
+          >
+            <Search />
+          </Button>
+        </div>
+      </div>
       <div className="flex-1 min-h-0">
         <ReactReader
           readerStyles={{
@@ -93,24 +162,20 @@ function BookReader({ book }: { book: BookDetail }) {
           }}
           url={process.env.NEXT_PUBLIC_API_BASE_URL + book.file}
           title={book.title}
+          tocChanged={(toc) => {
+            tocRef.current = toc; // toc는 NavItem[] 배열
+            setTotalChapters(toc.length); // 총 챕터 개수
+          }}
           location={location}
-          tocChanged={(toc) => (tocRef.current = toc)}
           locationChanged={handleLocationChange}
+          searchQuery={searchQuery}
+          onSearchResults={setSearchResults}
           getRendition={(rendition: Rendition) => {
             renditionRef.current = rendition;
 
             // 테마 적용
             rendition.themes.default({
               body: { background: 'black', color: 'white', fontSize: '16px' },
-            });
-
-            // 각 챕터 페이지 수 계산 (근사치)
-            rendition.on('relocated', () => {
-              if (!tocRef.current || chapterPages.length) return;
-
-              const pagesArr: number[] = tocRef.current.map(() => 1); // 챕터별 1장 단위
-              setChapterPages(pagesArr);
-              setTotalPages(pagesArr.reduce((a, b) => a + b, 0));
             });
 
             // iframe sandbox 처리

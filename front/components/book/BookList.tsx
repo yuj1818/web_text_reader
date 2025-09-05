@@ -37,7 +37,7 @@ function BookList({ initialBooks }: { initialBooks: Book[] }) {
   }
 
   return (
-    <div className="w-full flex-1 min-h-0 overflow-y-auto">
+    <div className="w-full flex-1 min-h-0 overflow-y-auto flex flex-col gap-2">
       {isFetching && <LoadingIndicator />}
       {data.map((book: Book) => (
         <BookItem key={book.id} book={book} />

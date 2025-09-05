@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import dayjs from '@/lib/dayjs';
 import { ThemeProvider } from '@/components/common/ThemeProvider';
 import { ModeToggle } from '@/components/common/ModeToggle';
 
