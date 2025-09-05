@@ -17,6 +17,7 @@ export default function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <body className="relative w-screen h-screen flex flex-col">
         <ThemeProvider>
+          <div id="root-portal"></div>
           <ModeToggle />
           {children}
         </ThemeProvider>

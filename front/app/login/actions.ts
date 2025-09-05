@@ -11,11 +11,13 @@ export async function login(formValues: LoginInterface) {
   cookieStore.set('accessToken', access, {
     httpOnly: true,
     path: '/',
-    secure: process.env.NODE_ENV === 'production',
+    secure: false,
   });
   cookieStore.set('refreshToken', refresh, {
     httpOnly: true,
     path: '/',
-    secure: process.env.NODE_ENV === 'production',
+    secure: false,
   });
+
+  return { success: true };
 }

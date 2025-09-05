@@ -1,13 +1,13 @@
 import BookList from '@/components/book/BookList';
 import { Button } from '@/components/ui/button';
-import { LibraryBig, Upload } from 'lucide-react';
 import { getBookList } from '@/lib/book';
-import { cookies } from 'next/headers';
+import { LibraryBig, Upload } from 'lucide-react';
+import { headers } from 'next/headers';
 
 export default async function Home() {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get('accessToken')?.value;
-  const books = await getBookList(accessToken);
+  const reqHeaders = await headers();
+  const cookie = reqHeaders.get('cookie') ?? '';
+  const books = await getBookList({ cookie });
 
   return (
     <div className="w-full h-full flex flex-col p-6 gap-8">

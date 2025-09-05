@@ -6,16 +6,13 @@ import { BookDashed, CircleX } from 'lucide-react';
 import { Book } from '@/model/book';
 import BookItem from './BookItem';
 import { getBookList } from '@/lib/book';
-import { getCookie } from '@/lib/cookies';
+import { ModalContext } from '@/contexts/ModalContext';
 
 function BookList({ initialBooks }: { initialBooks: Book[] }) {
-  const accessToken = getCookie('accessToken');
-
   const { status, data, isFetching } = useQuery({
     queryKey: ['books'],
-    queryFn: () => getBookList(accessToken),
+    queryFn: () => getBookList(),
     initialData: initialBooks,
-    enabled: !!accessToken,
   });
 
   if (status === 'error') {
@@ -27,7 +24,7 @@ function BookList({ initialBooks }: { initialBooks: Book[] }) {
     );
   }
 
-  if (data.length === 0) {
+  if (!data || data.length === 0) {
     return (
       <div className="w-full flex-1 min-h-0 flex flex-col gap-4 items-center justify-center">
         <BookDashed size="4rem" />
@@ -37,12 +34,14 @@ function BookList({ initialBooks }: { initialBooks: Book[] }) {
   }
 
   return (
-    <div className="w-full flex-1 min-h-0 overflow-y-auto flex flex-col gap-2">
-      {isFetching && <LoadingIndicator />}
-      {data.map((book: Book) => (
-        <BookItem key={book.id} book={book} />
-      ))}
-    </div>
+    <ModalContext>
+      <div className="w-full flex-1 min-h-0 overflow-y-auto flex flex-col gap-2">
+        {isFetching && <LoadingIndicator />}
+        {data.map((book: Book) => (
+          <BookItem key={book.id} book={book} />
+        ))}
+      </div>
+    </ModalContext>
   );
 }
 

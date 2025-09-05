@@ -1,7 +1,7 @@
 import BookReader from '@/components/book/BookReader';
 import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { getBookData } from '@/lib/book';
-import { cookies } from 'next/headers';
+import { headers } from 'next/headers';
 
 export default async function BookDetailPage({
   params,
@@ -10,9 +10,9 @@ export default async function BookDetailPage({
 }) {
   const { id } = await params;
 
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get('accessToken')?.value;
-  const book = await getBookData(accessToken, id);
+  const reqHeaders = await headers();
+  const cookie = reqHeaders.get('cookie') ?? '';
+  const book = await getBookData(id, { cookie });
 
   return (
     <div className="w-full h-full p-8">

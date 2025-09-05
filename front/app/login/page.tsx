@@ -3,7 +3,6 @@ import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { LoginInterface } from '@/model/user';
-import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { validateLoginForm } from '@/lib/validation';
 import InputField from '@/components/auth/InputField';
 import { login } from './actions';
@@ -36,8 +35,9 @@ export default function LoginPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(formValues);
-    router.push('/');
+    e.stopPropagation();
+    const res = await login(formValues);
+    if (res.success) router.push('/');
   };
 
   return (
