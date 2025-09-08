@@ -58,3 +58,18 @@ export async function uploadBook(data: FormData) {
 
   return res;
 }
+
+export async function saveBookmark(id: number, cfi: string | undefined) {
+  const res = await fetch(`${URL}${id}/bookmark/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ cfi }),
+  });
+
+  if (!res.ok) throw new Error('북마크 저장 실패');
+
+  return res;
+}

@@ -72,7 +72,9 @@ function BookItem({ book }: { book: Book }) {
                     close();
                   },
                   content: (
-                    <span>"{book.title}"을(를) 정말 삭제하시겠습니까?</span>
+                    <span className="text-background">
+                      "{book.title}"을(를) 정말 삭제하시겠습니까?
+                    </span>
                   ),
                   buttonVariant: 'destructive',
                 });

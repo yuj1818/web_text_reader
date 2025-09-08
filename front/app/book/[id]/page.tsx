@@ -1,4 +1,4 @@
-import BookReader from '@/components/book/BookReader';
+import BookReader from '@/components/book/reader';
 import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { getBookData } from '@/lib/book';
 import { headers } from 'next/headers';
