@@ -20,7 +20,7 @@ function BookToolbar({
   const router = useRouter();
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="relative bg-background pb-2 flex items-center justify-between h-[2.5rem]">
       <ChevronLeft
         className="cursor-pointer"
         size="1.5rem"

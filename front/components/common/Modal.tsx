@@ -37,10 +37,12 @@ function Modal({
   return (
     <Dimmed>
       <div
-        className="absolute top-1/2 left-1/2 -translate-1/2 bg-foreground rounded overflow-hidden z-[1001] min-w-[15rem] p-4 flex flex-col justify-center gap-8 border boder-gray-200 min-h-[10rem]"
+        className="absolute top-1/2 left-1/2 -translate-1/2 bg-foreground rounded overflow-hidden z-[1001] min-w-[15rem] p-4 flex flex-col justify-center gap-8 border boder-gray-200 min-h-[10rem] min-w-[20rem]"
         onClick={(e) => e.stopPropagation()}
       >
-        {title && <span className="text-xl font-semibold">{title}</span>}
+        {title && (
+          <span className="text-xl font-semibold text-background">{title}</span>
+        )}
         {content}
         {(leftBtnLabel || rightBtnLabel) && (
           <div className="w-full flex items-center gap-2 justify-end">

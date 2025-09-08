@@ -42,6 +42,13 @@ function BookContent({
       searchQuery={searchQuery}
       onSearchResults={onSearchResults}
       getRendition={getRendition}
+      epubInitOptions={{
+        openAs: 'epub',
+      }}
+      epubOptions={{
+        allowPopups: true,
+        allowScriptedContent: true,
+      }}
     />
   );
 }

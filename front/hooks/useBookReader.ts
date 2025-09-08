@@ -20,6 +20,13 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
   const [prevResults, setPrevResults] = useState<SearchResult[]>([]);
+  const [fontSize, setFontSize] = useState(16);
+  const [lineHeight, setLineHeight] = useState(1.2);
+  const [letterSpacing, setLetterSpacing] = useState(0);
+  const [theme, setTheme] = useState({
+    bgColor: '#000',
+    fontColor: '#FFF',
+  });
 
   useEffect(() => {
     locationRef.current = location;
@@ -39,8 +46,8 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
     const { displayed, href } = renditionRef.current.location.start;
     const chapterIndex = tocRef.current.findIndex((item) => item.href === href);
     if (chapterIndex === -1) return;
-
     setCurrentChapterIndex(chapterIndex);
+
     const chapterFraction = 1 / totalChapters;
     const percentage =
       (chapterIndex + displayed.page / displayed.total) * chapterFraction;
@@ -124,6 +131,22 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
     };
   }, [bookId]);
 
+  // 폰트 크기 조절
+  useEffect(() => {
+    renditionRef.current?.themes.fontSize(`${fontSize}px`);
+  }, [fontSize]);
+
+  useEffect(() => {
+    renditionRef.current?.themes.override('line-height', `${lineHeight}`);
+  }, [lineHeight]);
+
+  useEffect(() => {
+    renditionRef.current?.themes.override(
+      'letter-spacing',
+      `${letterSpacing}px`,
+    );
+  }, [letterSpacing]);
+
   return {
     location,
     progress,
@@ -131,11 +154,17 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
     searchResults,
     currentResultIndex,
     renditionRef,
+    fontSize,
+    lineHeight,
+    letterSpacing,
     onTocChanged,
     handleLocationChange,
     handleSliderChange,
     setSearchQuery,
     setSearchResults,
     goToNextResult,
+    setFontSize,
+    setLineHeight,
+    setLetterSpacing,
   };
 }

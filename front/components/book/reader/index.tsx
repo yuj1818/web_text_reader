@@ -4,6 +4,7 @@ import { useBookReader } from '@/hooks/useBookReader';
 import BookToolbar from './BookToolbar';
 import BookSlider from './BookSlider';
 import BookContent from './BookContent';
+import StylingOverlay from './styling';
 
 function BookReader({ book }: { book: BookDetail }) {
   const {
@@ -12,23 +13,37 @@ function BookReader({ book }: { book: BookDetail }) {
     searchQuery,
     searchResults,
     currentResultIndex,
+    renditionRef,
+    fontSize,
+    lineHeight,
+    letterSpacing,
     onTocChanged,
     handleLocationChange,
     handleSliderChange,
     setSearchQuery,
     setSearchResults,
     goToNextResult,
-    renditionRef,
+    setFontSize,
+    setLineHeight,
+    setLetterSpacing,
   } = useBookReader(book.id, book.bookmark_cfi);
 
   return (
-    <div className="relative h-full w-full bg-background flex flex-col gap-2">
+    <div className="relative h-full w-full bg-background flex flex-col">
       <BookToolbar
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         total={searchResults.length}
         currentResultIndex={currentResultIndex}
         goToNextResult={goToNextResult}
+      />
+      <StylingOverlay
+        fontSize={fontSize}
+        setFontSize={setFontSize}
+        lineHeight={lineHeight}
+        setLineHeight={setLineHeight}
+        letterSpacing={letterSpacing}
+        setLetterSpacing={setLetterSpacing}
       />
       <div className="flex-1 min-h-0">
         <BookContent
@@ -43,16 +58,11 @@ function BookReader({ book }: { book: BookDetail }) {
             renditionRef.current = rendition;
 
             rendition.themes.default({
-              body: { background: 'black', color: 'white', fontSize: '16px' },
-            });
-
-            rendition.on('rendered', (_section: any, iframeRef: any) => {
-              if (iframeRef?.iframe) {
-                iframeRef.iframe.setAttribute(
-                  'sandbox',
-                  'allow-same-origin allow-scripts allow-popups allow-forms',
-                );
-              }
+              body: {
+                background: 'black',
+                color: 'white',
+                fontSize: `${fontSize}px`,
+              },
             });
           }}
         />
