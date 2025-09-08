@@ -1,12 +1,13 @@
 import Dimmed from './Dimmed';
 import { Button } from '../ui/button';
+import clsx from 'clsx';
 
 interface ModalProps {
   open: boolean;
   title?: string;
   content?: React.ReactNode;
   rightBtnLabel?: string;
-  onRightBtnClick?: () => void;
+  onRightBtnClick?: () => void | Promise<void>;
   leftBtnLabel?: string;
   onLeftBtnClick?: () => void;
   buttonVariant?:
@@ -16,6 +17,8 @@ interface ModalProps {
     | 'outline'
     | 'secondary'
     | 'ghost';
+  rightBtnColor?: string;
+  rightBtnDisabled?: boolean;
 }
 
 function Modal({
@@ -27,13 +30,14 @@ function Modal({
   onRightBtnClick,
   onLeftBtnClick,
   buttonVariant,
+  rightBtnColor = '',
 }: ModalProps) {
   if (open === false) return null;
 
   return (
     <Dimmed>
       <div
-        className="absolute top-1/2 left-1/2 -translate-1/2 bg-foreground/5 rounded overflow-hidden z-[1001] min-w-[15rem] p-4 flex flex-col justify-center gap-8 border boder-gray-200 min-h-[10rem]"
+        className="absolute top-1/2 left-1/2 -translate-1/2 bg-foreground rounded overflow-hidden z-[1001] min-w-[15rem] p-4 flex flex-col justify-center gap-8 border boder-gray-200 min-h-[10rem]"
         onClick={(e) => e.stopPropagation()}
       >
         {title && <span className="text-xl font-semibold">{title}</span>}
@@ -53,7 +57,7 @@ function Modal({
               <Button
                 size="sm"
                 variant={buttonVariant || 'default'}
-                className="cursor-pointer"
+                className={clsx('cursor-pointer', rightBtnColor)}
                 onClick={onRightBtnClick}
               >
                 {rightBtnLabel}

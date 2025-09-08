@@ -46,3 +46,15 @@ export async function deleteBook(id: number) {
 
   return res;
 }
+
+export async function uploadBook(data: FormData) {
+  const res = await fetch(`${URL}upload/`, {
+    method: 'POST',
+    credentials: 'include',
+    body: data,
+  });
+
+  if (!res.ok) throw new Error('책 업로드 실패');
+
+  return res;
+}
