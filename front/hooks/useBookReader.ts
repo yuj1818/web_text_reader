@@ -17,6 +17,7 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
   const [progress, setProgress] = useState(0);
   const [totalChapters, setTotalChapters] = useState(0);
   const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
+  const [page, setPage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
@@ -46,6 +47,7 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
     const chapterIndex = tocRef.current.findIndex((item) => item.href === href);
     if (chapterIndex === -1) return;
     setCurrentChapterIndex(chapterIndex);
+    setPage(`${displayed.page}/${displayed.total}`);
 
     const chapterFraction = 1 / totalChapters;
     const percentage =
@@ -164,6 +166,7 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
     progress,
     searchQuery,
     searchResults,
+    currentChapterIndex,
     currentResultIndex,
     renditionRef,
     fontSize,
@@ -171,6 +174,7 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
     letterSpacing,
     theme,
     isOverlayed,
+    page,
     onTocChanged,
     handleLocationChange,
     handleSliderChange,

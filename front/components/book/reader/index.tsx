@@ -13,6 +13,7 @@ function BookReader({ book }: { book: BookDetail }) {
     progress,
     searchQuery,
     searchResults,
+    currentChapterIndex,
     currentResultIndex,
     renditionRef,
     fontSize,
@@ -20,6 +21,7 @@ function BookReader({ book }: { book: BookDetail }) {
     letterSpacing,
     theme,
     isOverlayed,
+    page,
     onTocChanged,
     handleLocationChange,
     handleSliderChange,
@@ -32,7 +34,6 @@ function BookReader({ book }: { book: BookDetail }) {
     setTheme,
     toggleOverlay,
   } = useBookReader(book.id, book.bookmark_cfi);
-
   return (
     <div className="relative h-full w-full bg-background flex flex-col">
       <BookToolbar
@@ -65,6 +66,7 @@ function BookReader({ book }: { book: BookDetail }) {
           onLocationChanged={handleLocationChange}
           searchQuery={searchQuery}
           onSearchResults={setSearchResults}
+          theme={theme}
           getRendition={(rendition) => {
             rendition.themes.default({
               body: ViewerThemes['default'],
@@ -74,6 +76,9 @@ function BookReader({ book }: { book: BookDetail }) {
           }}
         />
       </div>
+      <span className="text-center text-xs text-muted-foreground">
+        {currentChapterIndex + 1}화 {page}
+      </span>
       <BookSlider progress={progress} onChange={handleSliderChange} />
     </div>
   );

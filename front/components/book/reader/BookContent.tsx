@@ -1,3 +1,4 @@
+import { ThemeType, ViewerThemes } from '@/constants/viewerThemes';
 import { SearchResult } from '@/hooks/useBookReader';
 import { NavItem, Rendition } from 'epubjs';
 import { Dispatch, SetStateAction } from 'react';
@@ -8,17 +9,36 @@ interface BookContentProps {
   title: string;
   location: string | null;
   searchQuery: string;
+  theme: ThemeType;
   onTocChanged: (toc: NavItem[]) => void;
   onLocationChanged: (cfi?: string) => void;
   onSearchResults: Dispatch<SetStateAction<SearchResult[]>>;
   getRendition?: (rendition: Rendition) => void;
 }
 
+const getReaderStyles = (theme: ThemeType) => {
+  const styles = ViewerThemes[theme || 'default'];
+  return {
+    ...ReactReaderStyle,
+    container: {
+      ...ReactReaderStyle.container,
+      backgroundColor: styles.background,
+      transition: undefined,
+    },
+    readerArea: {
+      ...ReactReaderStyle.readerArea,
+      backgroundColor: styles.background,
+      transition: undefined,
+    },
+  };
+};
+
 function BookContent({
   file,
   title,
   location,
   searchQuery,
+  theme,
   onTocChanged,
   onLocationChanged,
   onSearchResults,
@@ -26,14 +46,7 @@ function BookContent({
 }: BookContentProps) {
   return (
     <ReactReader
-      readerStyles={{
-        ...ReactReaderStyle,
-        container: { ...ReactReaderStyle.container, backgroundColor: 'black' },
-        readerArea: {
-          ...ReactReaderStyle.readerArea,
-          backgroundColor: 'black',
-        },
-      }}
+      readerStyles={getReaderStyles(theme)}
       url={process.env.NEXT_PUBLIC_API_BASE_URL + file}
       title={title}
       tocChanged={onTocChanged}
