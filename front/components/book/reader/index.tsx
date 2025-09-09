@@ -33,6 +33,7 @@ function BookReader({ book }: { book: BookDetail }) {
     setLetterSpacing,
     setTheme,
     toggleOverlay,
+    getRendition,
   } = useBookReader(book.id, book.bookmark_cfi);
   return (
     <div className="relative h-full w-full bg-background flex flex-col">
@@ -67,13 +68,7 @@ function BookReader({ book }: { book: BookDetail }) {
           searchQuery={searchQuery}
           onSearchResults={setSearchResults}
           theme={theme}
-          getRendition={(rendition) => {
-            rendition.themes.default({
-              body: ViewerThemes['default'],
-            });
-
-            renditionRef.current = rendition;
-          }}
+          getRendition={getRendition}
         />
       </div>
       <span className="text-center text-xs text-muted-foreground">

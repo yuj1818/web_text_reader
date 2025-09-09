@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
-import type { Rendition, NavItem } from 'epubjs';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import type { Rendition, NavItem, Location } from 'epubjs';
 import { throttle } from '@/lib/throttle';
 import { saveBookmark } from '@/lib/book';
 import { ThemeType, ViewerThemes } from '@/constants/viewerThemes';
@@ -15,7 +15,6 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
   const locationRef = useRef(initialBookmark);
   const [location, setLocation] = useState(initialBookmark);
   const [progress, setProgress] = useState(0);
-  const [totalChapters, setTotalChapters] = useState(0);
   const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
   const [page, setPage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,22 +33,21 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
 
   const onTocChanged = (toc: NavItem[]) => {
     tocRef.current = toc;
-    setTotalChapters(toc.length);
   };
 
   // 로케이션 변경
-  const handleLocationChange = (epubcfi?: string) => {
+  const handleLocationChange = async (epubcfi?: string) => {
     if (!epubcfi) return;
     setLocation(epubcfi);
     if (!renditionRef.current || !tocRef.current.length) return;
-
-    const { displayed, href } = renditionRef.current.location.start;
+    const loc = renditionRef.current.location?.start;
+    if (!loc) return;
+    const { displayed, href } = loc;
     const chapterIndex = tocRef.current.findIndex((item) => item.href === href);
     if (chapterIndex === -1) return;
     setCurrentChapterIndex(chapterIndex);
     setPage(`${displayed.page}/${displayed.total}`);
-
-    const chapterFraction = 1 / totalChapters;
+    const chapterFraction = 1 / tocRef.current.length;
     const percentage =
       (chapterIndex + displayed.page / displayed.total) * chapterFraction;
     setProgress(percentage);
@@ -60,6 +58,7 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
     setProgress(val);
     if (!tocRef.current.length || !renditionRef.current) return;
 
+    const totalChapters = tocRef.current.length;
     const chapterFraction = 1 / totalChapters;
     let chapterIndex = Math.floor(val / chapterFraction);
     if (chapterIndex >= totalChapters) chapterIndex = totalChapters - 1;
@@ -85,15 +84,27 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
     });
   };
 
-  const clearHighlights = () => {
+  const clearHighlights = useCallback(() => {
     if (!renditionRef.current) return;
     prevResults.forEach((res) => {
       renditionRef.current?.annotations.remove(res.cfi, 'highlight');
     });
-  };
+  }, [prevResults]);
 
   const toggleOverlay = () => {
     setIsOverlayed(!isOverlayed);
+  };
+
+  const getRendition = (rendition: Rendition) => {
+    renditionRef.current = rendition;
+    rendition.themes.default({ body: ViewerThemes['default'] });
+
+    rendition.on('relocated', (relocation: Location) => {
+      const cfi = relocation?.start?.cfi;
+      if (cfi) {
+        handleLocationChange(cfi);
+      }
+    });
   };
 
   useEffect(() => {
@@ -104,7 +115,7 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
       setCurrentResultIndex(0);
       setPrevResults(searchResults);
     }
-  }, [searchResults]);
+  }, [searchResults, clearHighlights]);
 
   // 키보드 이동
   useEffect(() => {
@@ -186,5 +197,6 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
     setLetterSpacing,
     setTheme,
     toggleOverlay,
+    getRendition,
   };
 }

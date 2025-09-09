@@ -60,6 +60,7 @@ export async function uploadBook(data: FormData) {
 }
 
 export async function saveBookmark(id: number, cfi: string | undefined) {
+  console.log(cfi);
   const res = await fetch(`${URL}${id}/bookmark/`, {
     method: 'POST',
     headers: {
