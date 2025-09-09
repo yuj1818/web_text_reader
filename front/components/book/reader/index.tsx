@@ -5,6 +5,7 @@ import BookToolbar from './BookToolbar';
 import BookSlider from './BookSlider';
 import BookContent from './BookContent';
 import StylingOverlay from './styling';
+import { ViewerThemes } from '@/constants/viewerThemes';
 
 function BookReader({ book }: { book: BookDetail }) {
   const {
@@ -17,6 +18,8 @@ function BookReader({ book }: { book: BookDetail }) {
     fontSize,
     lineHeight,
     letterSpacing,
+    theme,
+    isOverlayed,
     onTocChanged,
     handleLocationChange,
     handleSliderChange,
@@ -26,6 +29,8 @@ function BookReader({ book }: { book: BookDetail }) {
     setFontSize,
     setLineHeight,
     setLetterSpacing,
+    setTheme,
+    toggleOverlay,
   } = useBookReader(book.id, book.bookmark_cfi);
 
   return (
@@ -36,15 +41,21 @@ function BookReader({ book }: { book: BookDetail }) {
         total={searchResults.length}
         currentResultIndex={currentResultIndex}
         goToNextResult={goToNextResult}
+        toggleOverlay={toggleOverlay}
       />
-      <StylingOverlay
-        fontSize={fontSize}
-        setFontSize={setFontSize}
-        lineHeight={lineHeight}
-        setLineHeight={setLineHeight}
-        letterSpacing={letterSpacing}
-        setLetterSpacing={setLetterSpacing}
-      />
+      {isOverlayed && (
+        <StylingOverlay
+          fontSize={fontSize}
+          setFontSize={setFontSize}
+          lineHeight={lineHeight}
+          setLineHeight={setLineHeight}
+          letterSpacing={letterSpacing}
+          setLetterSpacing={setLetterSpacing}
+          theme={theme}
+          setTheme={setTheme}
+          toggleOverlay={toggleOverlay}
+        />
+      )}
       <div className="flex-1 min-h-0">
         <BookContent
           file={book.file}
@@ -55,15 +66,11 @@ function BookReader({ book }: { book: BookDetail }) {
           searchQuery={searchQuery}
           onSearchResults={setSearchResults}
           getRendition={(rendition) => {
-            renditionRef.current = rendition;
-
             rendition.themes.default({
-              body: {
-                background: 'black',
-                color: 'white',
-                fontSize: `${fontSize}px`,
-              },
+              body: ViewerThemes['default'],
             });
+
+            renditionRef.current = rendition;
           }}
         />
       </div>

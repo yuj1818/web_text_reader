@@ -1,12 +1,22 @@
+import { ThemeType, ViewerThemes } from '@/constants/viewerThemes';
 import ThemeBox from './ThemeBox';
 
-function ThemeStyler() {
+interface ThemeStylerProps {
+  theme: ThemeType;
+  setTheme: (val: ThemeType) => void;
+}
+
+function ThemeStyler({ theme, setTheme }: ThemeStylerProps) {
   return (
     <ul className="flex w-full gap-4 overflow-x-auto">
-      <ThemeBox bgColor="bg-neutral-800" fontColor="text-white" />
-      <ThemeBox bgColor="bg-black" fontColor="text-white" />
-      <ThemeBox bgColor="bg-amber-100" fontColor="text-neutral-800" />
-      <ThemeBox bgColor="bg-white" fontColor="text-black" />
+      {Object.keys(ViewerThemes).map((key) => (
+        <ThemeBox
+          key={key}
+          theme={key as ThemeType}
+          isSelected={theme === key}
+          onClick={setTheme}
+        />
+      ))}
     </ul>
   );
 }

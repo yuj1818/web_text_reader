@@ -1,4 +1,4 @@
-import { ChevronLeft, Search } from 'lucide-react';
+import { ChevronLeft, Search, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 
@@ -8,6 +8,7 @@ interface BookToolbarProps {
   currentResultIndex: number;
   total: number;
   goToNextResult: () => void;
+  toggleOverlay: () => void;
 }
 
 function BookToolbar({
@@ -16,6 +17,7 @@ function BookToolbar({
   currentResultIndex,
   total,
   goToNextResult,
+  toggleOverlay,
 }: BookToolbarProps) {
   const router = useRouter();
 
@@ -25,6 +27,11 @@ function BookToolbar({
         className="cursor-pointer"
         size="1.5rem"
         onClick={() => router.back()}
+      />
+      <Settings
+        className="cursor-pointer"
+        size="1.25rem"
+        onClick={toggleOverlay}
       />
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1 border rounded p-1">

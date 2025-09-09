@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import type { Rendition, NavItem } from 'epubjs';
 import { throttle } from '@/lib/throttle';
 import { saveBookmark } from '@/lib/book';
+import { ThemeType, ViewerThemes } from '@/constants/viewerThemes';
 
 export interface SearchResult {
   cfi: string;
@@ -23,10 +24,8 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
   const [fontSize, setFontSize] = useState(16);
   const [lineHeight, setLineHeight] = useState(1.2);
   const [letterSpacing, setLetterSpacing] = useState(0);
-  const [theme, setTheme] = useState({
-    bgColor: '#000',
-    fontColor: '#FFF',
-  });
+  const [theme, setTheme] = useState<ThemeType>('default');
+  const [isOverlayed, setIsOverlayed] = useState(false);
 
   useEffect(() => {
     locationRef.current = location;
@@ -91,6 +90,10 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
     });
   };
 
+  const toggleOverlay = () => {
+    setIsOverlayed(!isOverlayed);
+  };
+
   useEffect(() => {
     if (searchResults.length) {
       setLocation(searchResults[0].cfi);
@@ -147,6 +150,15 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
     );
   }, [letterSpacing]);
 
+  useEffect(() => {
+    if (!renditionRef.current) return;
+
+    const themes = renditionRef.current.themes;
+    const styles = ViewerThemes[theme];
+    themes.override('color', styles.color);
+    themes.override('background', styles.background);
+  }, [theme]);
+
   return {
     location,
     progress,
@@ -157,6 +169,8 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
     fontSize,
     lineHeight,
     letterSpacing,
+    theme,
+    isOverlayed,
     onTocChanged,
     handleLocationChange,
     handleSliderChange,
@@ -166,5 +180,7 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
     setFontSize,
     setLineHeight,
     setLetterSpacing,
+    setTheme,
+    toggleOverlay,
   };
 }
