@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from .models import *
 from .serializers import *
-from .utils import txt_to_epub_bytes_smart
+from .utils import txt_to_epub_bytes_flexible
 import os
 import tempfile
 
@@ -21,7 +21,7 @@ def upload_book(request):
   title = request.data.get("title", txt_file.name).split('.')[0]
 
   # txt 파일 → epub bytes 변환
-  epub_bytes = txt_to_epub_bytes_smart(txt_file.read(), book_title=title)
+  epub_bytes = txt_to_epub_bytes_flexible(txt_file.read(), default_title=title)
   epub_name = f"{os.path.splitext(txt_file.name)[0]}.epub"
 
   # 모델에 저장

@@ -1,87 +1,14 @@
 from ebooklib import epub
 import io
 import re
+import html
 
-def txt_to_epub_bytes(txt_bytes: bytes, title: str = "Untitled") -> bytes:
+def txt_to_epub_bytes_flexible(txt_bytes: bytes, default_title: str = "Untitled") -> bytes:
     """
-    한글 TXT 바이트를 받아 EPUB 바이트로 변환 (chunk 단위로 나눠서 안정적)
-    """
-    # 1. 안전한 디코딩
-    try:
-        text = txt_bytes.decode("utf-8")
-    except UnicodeDecodeError:
-        try:
-            text = txt_bytes.decode("cp949")
-        except UnicodeDecodeError:
-            text = txt_bytes.decode("utf-8", errors="replace")
-
-    # 2. EPUB 책 생성
-    book = epub.EpubBook()
-    book.set_identifier("id123456")
-    book.set_title(title)
-    book.set_language("ko")
-
-    # 3. TXT를 chunk로 나누기 (한 챕터당 5000자)
-    MAX_CHARS = 5000
-    safe_text = text.replace('\r\n', '\n')
-    chunks = [safe_text[i:i+MAX_CHARS] for i in range(0, len(safe_text), MAX_CHARS)]
-
-    chapters = []
-    for idx, chunk in enumerate(chunks, 1):
-        chap = epub.EpubHtml(
-            title=f"Chapter {idx}",
-            file_name=f"chap_{idx}.xhtml",
-            lang="ko"
-        )
-        chap.content = f"""
-        <html>
-          <head>
-            <meta charset="UTF-8"/>
-            <title>{title} - {idx}</title>
-          </head>
-          <body>
-            <h1>{title} - {idx}</h1>
-            <p>{chunk.replace('\n','<br/>')}</p>
-          </body>
-        </html>
-        """
-        book.add_item(chap)
-        chapters.append(chap)
-
-    # 4. Spine과 TOC
-    book.spine = ["nav"] + chapters
-    book.toc = tuple(epub.Link(ch.file_name, ch.title, ch.file_name) for ch in chapters)
-
-    # 5. Nav/NCX 등록
-    book.add_item(epub.EpubNcx())
-    book.add_item(epub.EpubNav())
-
-    # 6. 기본 CSS 추가
-    style = epub.EpubItem(
-        uid="style_nav",
-        file_name="style/nav.css",
-        media_type="text/css",
-        content=b"body { font-family: Malgun Gothic, Arial, sans-serif; line-height: 1.5; }"
-    )
-    book.add_item(style)
-
-    # 7. EPUB 저장 (메모리)
-    buf = io.BytesIO()
-    epub.write_epub(buf, book)
-    epub_bytes = buf.getvalue()
-
-    # 8. 최소 크기 체크
-    if len(epub_bytes) < 500:
-        raise ValueError("EPUB 생성 실패: 내용이 비어 있습니다.")
-
-    return epub_bytes
-
-def txt_to_epub_bytes_smart(txt_bytes: bytes, book_title: str = "Untitled") -> bytes:
-    """
-    한글 TXT 바이트를 받아 EPUB 바이트로 변환.
-    - 첫 줄에서 '진짜 제목 n화'에서 n화 제거 후 제목 추출
-    - '[진짜 제목] n화' 기준으로 챕터 나누기
-    - 패턴 없으면 5000자 단위로 fallback
+    거의 모든 n화 형식을 지원하는 TXT -> EPUB 변환
+    - [제목] n화, n화 [부제], n화. 부제, n화：부제, n화 등
+    - 내용이 비어있거나 패턴 없으면 5000자 단위 fallback
+    - HTML escape 적용
     """
     # 1. 안전한 디코딩
     try:
@@ -95,35 +22,47 @@ def txt_to_epub_bytes_smart(txt_bytes: bytes, book_title: str = "Untitled") -> b
     text = text.replace('\r\n', '\n').strip()
 
     # 2. 첫 줄에서 실제 제목 추출
-    lines = text.split('\n')
-    first_line = lines[0].strip() if lines else "Untitled"
-
-    # '1화' 이전 부분이 제목
+    first_line = text.split('\n')[0].strip() if text else default_title
     match_title = re.match(r'(.+?)\s*\d+화', first_line)
     real_title = match_title.group(1).strip() if match_title else first_line
- 
+
     # 3. EPUB 생성
     book = epub.EpubBook()
     book.set_identifier("id123456")
-    book.set_title(book_title)
+    book.set_title(default_title)
     book.set_language("ko")
 
-    # 4. '[진짜 제목] n화' 패턴으로 챕터 구분
-    # real_title과 붙어있는 n화만 챕터로 잡음
-    pattern = re.compile(r'^\s*(.+?)\s*(\d+)화\s*$', re.MULTILINE)
-    matches = list(pattern.finditer(text))
+    # 4. 챕터 패턴: 다양한 n화 형식 허용
+    pattern = re.compile(
+        r'^\s*'                               # 줄 시작 공백 허용
+        r'(?:\[(?P<title1>.*?)\]\s*)?'        # [제목] optional
+        r'(?P<num>\d+)화'                     # n화
+        r'(?:[.：:)]\s*(?P<subtitle>.+?))?'   # .,：,:), 구분자 후 부제 optional
+        r'\s*$', re.MULTILINE
+    )
 
+    matches = list(pattern.finditer(text))
     chapters = []
 
     if matches:
         for idx, match in enumerate(matches):
             start = match.start()
-            end = matches[idx+1].start() if idx+1 < len(matches) else len(text)
-            chap_title = match.group().strip()
-            chap_content = text[start:end].replace('\n','<br/>').strip()
+            end = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
+
+            chap_title_parts = [
+                match.group('title1') or '',
+                match.group('num') + "화",
+                match.group('subtitle') or ''
+            ]
+            full_title = " ".join(filter(None, [part.strip() for part in chap_title_parts]))
+
+            chap_content = text[start:end].strip()
+            if not chap_content:
+                chap_content = "내용 없음"
+            chap_content = html.escape(chap_content).replace('\n','<br/>')
 
             chap = epub.EpubHtml(
-                title=chap_title,
+                title=full_title,
                 file_name=f"chap_{idx+1}.xhtml",
                 lang="ko"
             )
@@ -131,10 +70,10 @@ def txt_to_epub_bytes_smart(txt_bytes: bytes, book_title: str = "Untitled") -> b
             <html>
               <head>
                 <meta charset="UTF-8"/>
-                <title>{chap_title}</title>
+                <title>{full_title}</title>
               </head>
               <body>
-                <h1>{chap_title}</h1>
+                <h1>{full_title}</h1>
                 <p>{chap_content}</p>
               </body>
             </html>
@@ -142,10 +81,11 @@ def txt_to_epub_bytes_smart(txt_bytes: bytes, book_title: str = "Untitled") -> b
             book.add_item(chap)
             chapters.append(chap)
     else:
-        # 패턴 없으면 5000자 단위로 fallback
+        # 패턴 없으면 5000자 단위 fallback
         MAX_CHARS = 5000
         chunks = [text[i:i+MAX_CHARS] for i in range(0, len(text), MAX_CHARS)]
         for idx, chunk in enumerate(chunks, 1):
+            chap_content = html.escape(chunk).replace('\n','<br/>')
             chap = epub.EpubHtml(
                 title=f"{real_title} - Chapter {idx}",
                 file_name=f"chap_{idx}.xhtml",
@@ -159,7 +99,7 @@ def txt_to_epub_bytes_smart(txt_bytes: bytes, book_title: str = "Untitled") -> b
               </head>
               <body>
                 <h1>{real_title} - Chapter {idx}</h1>
-                <p>{chunk.replace('\n','<br/>')}</p>
+                <p>{chap_content}</p>
               </body>
             </html>
             """
