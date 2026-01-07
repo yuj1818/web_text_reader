@@ -9,10 +9,12 @@ export interface SearchResult {
   excerpt: string;
 }
 
+const THRESHOLD = 100;
+const LOCK_TIME = 400;
+
 export function useBookReader(bookId: number, initialBookmark: string | null) {
   const renditionRef = useRef<Rendition | undefined>(undefined);
   const tocRef = useRef<NavItem[]>([]);
-  const locationRef = useRef(initialBookmark);
   const [location, setLocation] = useState(initialBookmark);
   const [progress, setProgress] = useState(0);
   const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
@@ -26,10 +28,8 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
   const [letterSpacing, setLetterSpacing] = useState(0);
   const [theme, setTheme] = useState<ThemeType>('default');
   const [isOverlayed, setIsOverlayed] = useState(false);
-
-  useEffect(() => {
-    locationRef.current = location;
-  }, [location]);
+  const wheelAccumulatorRef = useRef(0);
+  const wheelLockedRef = useRef(false);
 
   const onTocChanged = (toc: NavItem[]) => {
     tocRef.current = toc;
@@ -39,6 +39,7 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
   const handleLocationChange = async (epubcfi?: string) => {
     if (!epubcfi) return;
     setLocation(epubcfi);
+    await saveBookmark(bookId, epubcfi || '');
     if (!renditionRef.current || !tocRef.current.length) return;
     const loc = renditionRef.current.location?.start;
     if (!loc) return;
@@ -137,15 +138,34 @@ export function useBookReader(bookId: number, initialBookmark: string | null) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // 언마운트 시 북마크 저장
+  // 스크롤 페이지 이동(단, 네비게이션 쪽에서만 가능. iframe 영역에서는 상쇄됨)
   useEffect(() => {
-    const save = async () => {
-      await saveBookmark(bookId, locationRef.current || '');
+    const handleWheel = (e: WheelEvent) => {
+      if (!renditionRef.current) return;
+      if (wheelLockedRef.current) return;
+
+      e.preventDefault();
+      wheelAccumulatorRef.current += e.deltaY;
+
+      if (Math.abs(wheelAccumulatorRef.current) >= THRESHOLD) {
+        if (Math.sign(wheelAccumulatorRef.current) > 0) {
+          renditionRef.current.next();
+        } else {
+          renditionRef.current.prev();
+        }
+
+        wheelAccumulatorRef.current = 0;
+        wheelLockedRef.current = true;
+
+        setTimeout(() => {
+          wheelLockedRef.current = false;
+        }, LOCK_TIME);
+      }
     };
-    return () => {
-      save();
-    };
-  }, [bookId]);
+
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, []);
 
   // 폰트 크기 조절
   useEffect(() => {
