@@ -2,6 +2,7 @@ from ebooklib import epub
 import io
 import re
 import html
+import uuid
 
 def txt_to_epub_bytes_flexible(txt_bytes: bytes, default_title: str = "Untitled") -> bytes:
     """
@@ -28,7 +29,7 @@ def txt_to_epub_bytes_flexible(txt_bytes: bytes, default_title: str = "Untitled"
 
     # 3. EPUB 생성
     book = epub.EpubBook()
-    book.set_identifier("id123456")
+    book.set_identifier(uuid.uuid4())
     book.set_title(default_title)
     book.set_language("ko")
 

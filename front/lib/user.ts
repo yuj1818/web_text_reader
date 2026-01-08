@@ -33,3 +33,24 @@ export async function register(formValues: RegisterInterface) {
     headers: { 'Content-Type': 'application/json' },
   });
 }
+
+export async function logout() {
+  const res = await fetch(
+    process.env.NEXT_PUBLIC_BASE_URL + '/api/accounts/logout/',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    },
+  );
+
+  if (!res.ok) throw new Error('로그아웃 실패');
+
+  if (res.status === 204) {
+    return { success: true };
+  }
+
+  return res.json();
+}
